@@ -24,97 +24,61 @@ enum RepeatAction {
     BrightDown,
     VolUp,
     VolDown,
+    GammaUp,
+    GammaDown,
 }
 
 static HOTKEY:         EventCode = EventCode::EV_KEY(EV_KEY::BTN_TRIGGER_HAPPY5);
+static HOTKEY2:        EventCode = EventCode::EV_KEY(EV_KEY::BTN_TRIGGER_HAPPY4);
 static BRIGHT_UP:      EventCode = EventCode::EV_KEY(EV_KEY::BTN_DPAD_UP);
 static BRIGHT_DOWN:    EventCode = EventCode::EV_KEY(EV_KEY::BTN_DPAD_DOWN);
-static VOL_UP:         EventCode = EventCode::EV_KEY(EV_KEY::BTN_DPAD_RIGHT);
-static VOL_DOWN:       EventCode = EventCode::EV_KEY(EV_KEY::BTN_DPAD_LEFT);
-static VOL_UP2:        EventCode = EventCode::EV_KEY(EV_KEY::BTN_TR);
-static VOL_DOWN2:      EventCode = EventCode::EV_KEY(EV_KEY::BTN_TL);
-static BRIGHT_DOWN2:   EventCode = EventCode::EV_KEY(EV_KEY::BTN_TRIGGER_HAPPY3);
-static BRIGHT_UP2:     EventCode = EventCode::EV_KEY(EV_KEY::BTN_TRIGGER_HAPPY4);
+static GAMMA_UP:       EventCode = EventCode::EV_KEY(EV_KEY::BTN_DPAD_RIGHT);
+static GAMMA_DOWN:     EventCode = EventCode::EV_KEY(EV_KEY::BTN_DPAD_LEFT);
+static VOL_UP:         EventCode = EventCode::EV_KEY(EV_KEY::BTN_TR);
+static VOL_DOWN:       EventCode = EventCode::EV_KEY(EV_KEY::BTN_TL);
+/*static GAMMA_UP:     EventCode = EventCode::EV_KEY(EV_KEY::BTN_TR2);
+static GAMMA_DOWN:     EventCode = EventCode::EV_KEY(EV_KEY::BTN_TL2);*/
 static VOLUME_UP:      EventCode = EventCode::EV_KEY(EV_KEY::KEY_VOLUMEUP);
 static VOLUME_DOWN:    EventCode = EventCode::EV_KEY(EV_KEY::KEY_VOLUMEDOWN);
-static MUTE:           EventCode = EventCode::EV_KEY(EV_KEY::KEY_PLAYPAUSE);
-
-/*fn blink1() {
-    Command::new("brightnessctl").arg("-O").output().expect("Failed to execute brightnessctl");
-
-    Command::new("brightnessctl").args(&["-T","1.5"]).output().expect("Failed to execute brightnessctl");
-    Command::new("sleep").arg("0.1").output().expect("Failed to execute brightnessctl");
-
-    Command::new("brightnessctl").arg("-I").output().expect("Failed to execute brightnessctl");
-}
-
-fn blink2() {
-    Command::new("brightnessctl").arg("-O").output().expect("Failed to execute brightnessctl");
-
-    Command::new("brightnessctl").args(&["-T","1.5"]).output().expect("Failed to execute brightnessctl");
-    Command::new("sleep").arg("0.1").output().expect("Failed to execute brightnessctl");
-
-    Command::new("brightnessctl").arg("-I").output().expect("Failed to execute brightnessctl");
-    Command::new("sleep").arg("0.1").output().expect("Failed to execute brightnessctl");
-
-    Command::new("brightnessctl").args(&["-T","1.5"]).output().expect("Failed to execute brightnessctl");
-    Command::new("sleep").arg("0.1").output().expect("Failed to execute brightnessctl");
-
-    Command::new("brightnessctl").arg("-I").output().expect("Failed to execute brightnessctl");
-}*/
+static MUTE:           EventCode = EventCode::EV_KEY(EV_KEY::BTN_TRIGGER_HAPPY3);
 
 fn process_event(_dev: &Device, ev: &InputEvent, hotkey: bool, repeat_action: &Arc<AtomicU8>, repeat_active: &Arc<AtomicBool>) {
-//    println!("Event: time {}.{} type {} code {} value {} hotkey {}",
-//             ev.time.tv_sec,
-//             ev.time.tv_usec,
-//             ev.event_type,
-//             ev.event_code,
-//             ev.value,
-//             hotkey);
-
     if hotkey && ev.value == 1 {
-        if ev.event_code == BRIGHT_UP || ev.event_code == BRIGHT_UP2 {
+        if ev.event_code == BRIGHT_UP || ev.event_code == VOLUME_UP {
             repeat_action.store(RepeatAction::BrightUp as u8, Ordering::Relaxed);
             repeat_active.store(true, Ordering::Relaxed);
-        } else if ev.event_code == BRIGHT_DOWN || ev.event_code == BRIGHT_DOWN2 {
+        } else if ev.event_code == BRIGHT_DOWN || ev.event_code == VOLUME_DOWN {
             repeat_action.store(RepeatAction::BrightDown as u8, Ordering::Relaxed);
             repeat_active.store(true, Ordering::Relaxed);
-        } else if ev.event_code == VOL_UP || ev.event_code == VOL_UP2 {
+        } else if ev.event_code == VOL_UP {
             repeat_action.store(RepeatAction::VolUp as u8, Ordering::Relaxed);
             repeat_active.store(true, Ordering::Relaxed);
-        } else if ev.event_code == VOL_DOWN || ev.event_code == VOL_DOWN2 {
+        } else if ev.event_code == VOL_DOWN {
             repeat_action.store(RepeatAction::VolDown as u8, Ordering::Relaxed);
             repeat_active.store(true, Ordering::Relaxed);
+		} else if ev.event_code == GAMMA_UP {
+			repeat_action.store(RepeatAction::GammaUp as u8, Ordering::Relaxed);
+			repeat_active.store(true, Ordering::Relaxed);
+		} else if ev.event_code == GAMMA_DOWN {
+			repeat_action.store(RepeatAction::GammaDown as u8, Ordering::Relaxed);
+			repeat_active.store(true, Ordering::Relaxed);
+		} else if ev.event_code == MUTE {
+            Command::new("mute_toggle.sh").output().expect("Failed to execute mute_toggle.sh");
         }
-        /*else if ev.event_code == PERF_MAX {
-            Command::new("sudo").args(&["perfmax", "On"]).output().expect("Failed to execute performance");
-            //blink1();
+         else if ev.event_code == EventCode::EV_KEY(EV_KEY::KEY_POWER) && ev.value > 0 {
+			if let Ok(mut child) = Command::new("finish.sh").spawn() {
+                std::thread::spawn(move || { let _ = child.wait(); });
+            }
         }
-        else if ev.event_code == PERF_NORM {
-            Command::new("sudo").arg("perfnorm").output().expect("Failed to execute performance");
-            //blink1();
-        }*/
-        else if ev.event_code == EventCode::EV_KEY(EV_KEY::KEY_POWER) && ev.value > 0 {
-            //blink2();
-            Command::new("finish.sh").spawn().ok().expect("Failed to execute shutdown process");
-        }
-        /*else if ev.event_code == DARK_ON {
-            //Command::new("sudo").args(&["rfkill", "block", "all"]).output().expect("Failed to execute rfkill");
-            //blink1();
-        //}
-        //else if ev.event_code == DARK_OFF {
-            //Command::new("sudo").args(&["rfkill", "unblock", "all"]).output().expect("Failed to execute rfkill");
-            //blink1();
-        }*/
     }
     else if ev.event_code == EventCode::EV_SW(EV_SW::SW_HEADPHONE_INSERT) {
         let dest = match ev.value { 1 => "SPK", _ => "HP" };
         Command::new("amixer").args(&["-q", "sset", "'Playback Path'", dest]).output().expect("Failed to execute amixer");
-        //blink1();
     }
     else if ev.event_code == EventCode::EV_KEY(EV_KEY::KEY_POWER) && ev.value == 1 {
-        //blink2();
-        Command::new("pause.sh").spawn().ok().expect("Failed to execute suspend process");
+        if let Ok(mut child) = Command::new("pause.sh").spawn() {
+            std::thread::spawn(move || { let _ = child.wait(); });
+        }
     }
     else if ev.event_code == VOLUME_UP  && ev.value > 0 {
         Command::new("amixer").args(&["-q", "sset", "Playback", "1%+"]).output().expect("Failed to execute amixer");
@@ -122,20 +86,17 @@ fn process_event(_dev: &Device, ev: &InputEvent, hotkey: bool, repeat_action: &A
     else if ev.event_code == VOLUME_DOWN  && ev.value > 0 {
         Command::new("amixer").args(&["-q", "sset", "Playback", "1%-"]).output().expect("Failed to execute amixer");
     }
-    else if ev.event_code == MUTE && ev.value > 0 {
-        Command::new("mute_toggle.sh").output().expect("Failed to execute amixer");
-    }
     if ev.value == 0 {
         let code = &ev.event_code;
 
         if *code == BRIGHT_UP
-            || *code == BRIGHT_UP2
             || *code == BRIGHT_DOWN
-            || *code == BRIGHT_DOWN2
             || *code == VOL_UP
-            || *code == VOL_UP2
             || *code == VOL_DOWN
-            || *code == VOL_DOWN2
+			|| *code == VOLUME_UP
+			|| *code == VOLUME_DOWN
+            || *code == GAMMA_UP
+            || *code == GAMMA_DOWN
         {
             repeat_action.store(RepeatAction::None as u8, Ordering::Relaxed);
             repeat_active.store(false, Ordering::Relaxed);
@@ -143,18 +104,29 @@ fn process_event(_dev: &Device, ev: &InputEvent, hotkey: bool, repeat_action: &A
     }
 }
 
-fn process_event2(_dev: &Device, ev: &InputEvent, selectkey: bool) {
-    /*println!("Event: time {}.{} type {} code {} value {} selectkey {}",
-             ev.time.tv_sec,
-             ev.time.tv_usec,
-             ev.event_type,
-             ev.event_code,
-             ev.value,
-             selectkey);*/
-
+fn process_event2(_dev: &Device, ev: &InputEvent, selectkey: bool, happy3key: bool) {
     if selectkey{
         if ev.event_code == EventCode::EV_KEY(EV_KEY::BTN_TRIGGER_HAPPY4) && ev.value == 1 {
-            Command::new("speak_bat_life.sh").spawn().ok().expect("Failed to execute battery reading out loud");
+            if let Ok(mut child) = Command::new("speak_bat_life.sh").spawn() {
+                std::thread::spawn(move || { let _ = child.wait(); });
+            }
+        }
+		else if ev.event_code == EventCode::EV_KEY(EV_KEY::BTN_TL) && ev.value == 1 {
+            if let Ok(mut child) = Command::new("toggle_wifi.sh").spawn() {
+				std::thread::spawn(move || { let _ = child.wait(); });
+			}
+        }
+        else if ev.event_code == EventCode::EV_KEY(EV_KEY::BTN_TR) && ev.value == 1 {
+            if let Ok(mut child) = Command::new("toggle_bt.sh").spawn() {
+                std::thread::spawn(move || { let _ = child.wait(); });
+            }
+		}
+    }
+    if happy3key {
+        if ev.event_code == EventCode::EV_KEY(EV_KEY::BTN_EAST) && ev.value == 1 {
+            if let Ok(mut child) = Command::new("/usr/local/bin/savesync.sh").arg("--bg").spawn() {
+                std::thread::spawn(move || { let _ = child.wait(); });
+            }
         }
     }
 }
@@ -165,6 +137,7 @@ fn main() -> io::Result<()> {
     let mut devs: Vec<Device> = Vec::new();
     let mut hotkey = false;
     let mut selectkey = false;
+    let mut happy3key = false;
     let repeat_action = Arc::new(AtomicU8::new(RepeatAction::None as u8));
     let repeat_active = Arc::new(AtomicBool::new(false));
 {
@@ -198,6 +171,12 @@ fn main() -> io::Result<()> {
                     .args(&["-q", "sset", "Playback", "1%-"])
                     .output();
             }
+			RepeatAction::GammaUp => {
+				Command::new("gamma_up.sh").output().ok();
+			}
+			RepeatAction::GammaDown => {
+				Command::new("gamma_dn.sh").output().ok();
+			}			
             RepeatAction::None => {
                 // nothing to do
             }
@@ -223,8 +202,6 @@ for s in ["/dev/input/event10", "/dev/input/event9", "/dev/input/event8", "/dev/
         i += 1;
     }
 
-    //Command::new("brightnessctl").arg("-I").output().expect("Failed to execute brightnessctl");
-
     loop {
         poll.poll(&mut events, None)?;
 
@@ -235,7 +212,7 @@ for s in ["/dev/input/event10", "/dev/input/event9", "/dev/input/event8", "/dev/
                 match e {
                     Ok(k) => {
                         let ev = &k.1;
-                        if ev.event_code == HOTKEY {
+                        if ev.event_code == HOTKEY || ev.event_code == HOTKEY2 {
                             hotkey = ev.value == 1;
                             //let grab = if hotkey { GrabMode::Grab } else { GrabMode::Ungrab };
                             //dev.grab(grab)?;
@@ -244,7 +221,10 @@ for s in ["/dev/input/event10", "/dev/input/event9", "/dev/input/event8", "/dev/
                         if ev.event_code == EventCode::EV_KEY(EV_KEY::BTN_TRIGGER_HAPPY1) {
                             selectkey = ev.value == 1 || ev.value == 2;
                         }
-                        process_event2(&dev, &ev, selectkey)
+                        if ev.event_code == EventCode::EV_KEY(EV_KEY::BTN_TRIGGER_HAPPY3) {
+                            happy3key = ev.value == 1 || ev.value == 2;
+                        }
+                        process_event2(&dev, &ev, selectkey, happy3key)
                     },
                     _ => ()
                 }
